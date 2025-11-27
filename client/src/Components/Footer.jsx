@@ -45,7 +45,6 @@ export default function Footer() {
       )}
 
       <footer className="w-full font-sans text-neutral-900">
-        {/* Newsletter Section */}
         <div className="bg-[#e9e7dc] pt-10 pb-10 md:pt-16 md:pb-12 text-center px-4">
           <h2 className="text-2xl md:text-3xl font-semibold mb-4">
             Subscribe to our newsletter
@@ -55,10 +54,6 @@ export default function Footer() {
             submissions conveniently recorded in the customer management area of
             your admin dashboard for easy access and follow-up.
           </div>
-          {/* Responsive Form:
-              - Mobile: flex-col (vertical stack), w-full input
-              - Tablet/Desktop: flex-row (horizontal), fixed width input
-          */}
           <form
             className="flex flex-col md:flex-row justify-center items-center gap-4 w-full max-w-lg md:max-w-none mx-auto"
             onSubmit={handleSubmit}
@@ -80,17 +75,9 @@ export default function Footer() {
           </form>
         </div>
 
-        {/* Footer Links */}
-        {/* Responsive Grid/Flex Layout:
-            - Mobile (<480px): Grid 1 column (gap-8)
-            - Tablet (768px): Grid 3 columns
-            - Laptop (1024px): Grid 4 or 5 columns
-            - Desktop (1280px+): Flex row (gap-20) as per original design
-        */}
         <div className="bg-[#faf9f6] py-8 px-6">
           <div className="max-w-[1920px] mx-auto grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:flex xl:justify-center xl:items-start xl:gap-20 gap-y-10 gap-x-4">
-            {/* Logo/Shop Column */}
-            {/* Mobile: Takes full width or fits in grid. Desktop: Standard flex item */}
+
             <div className="xs:col-span-2 md:col-span-1 lg:col-span-1 xl:block flex justify-start">
               <Link to="/">
                 <img
@@ -100,7 +87,6 @@ export default function Footer() {
                 />
               </Link>
             </div>
-
             <div className="flex flex-col min-w-[170px] space-y-2">
               <div className="font-medium">Shop</div>
               <Link to="/shopall">SHOP ALL</Link>
@@ -108,14 +94,12 @@ export default function Footer() {
               <Link to="/newarrival">NEW ARRIVALS</Link>
             </div>
 
-            {/* Account Column */}
             <div className="flex flex-col min-w-[125px] space-y-2">
               <div className="font-medium">Account</div>
               <Link to="/login">MY ACCOUNT</Link>
               <div>FAVORITES</div>
             </div>
 
-            {/* Company Column */}
             <div className="flex flex-col min-w-[125px] space-y-2">
               <div className="font-medium">Company</div>
               <a
@@ -128,12 +112,10 @@ export default function Footer() {
               </a>
             </div>
 
-            {/* Info Column - hidden empty column in original? Keeping structure. */}
             <div className="flex flex-col min-w-[125px] space-y-2">
               <div className="font-medium">Info</div>
             </div>
 
-            {/* Follow Us Column */}
             <div className="flex flex-col min-w-[125px] space-y-2">
               <div className="font-medium">Follow Us</div>
               <div className="flex space-x-4 text-xl mt-2">
@@ -144,7 +126,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Copyright */}
         <div className="bg-neutral-900 text-white text-center py-4 px-4 text-sm md:text-base">
           © 2025 Spree Commerce DEMO. All Rights Reserved.. Powered by{" "}
           <a href="#" className="underline">

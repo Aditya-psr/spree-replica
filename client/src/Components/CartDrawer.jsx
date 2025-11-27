@@ -1,8 +1,11 @@
 import React, { useContext } from "react";
 import { CartContext } from "../context/CartProvider";
 import { nameToColor, getColorLabel } from "../utils/colorUtils";
+import { useNavigate } from "react-router-dom";
 
 export default function CartDrawer() {
+  const navigate = useNavigate();
+
   const {
     cart,
     popupOpen,
@@ -15,17 +18,14 @@ export default function CartDrawer() {
   if (!popupOpen) return null;
 
   return (
-    // 🔹 FULL-SCREEN OVERLAY
     <div
       className="fixed inset-0 z-[2000] flex justify-end bg-black/20"
       onClick={closeCartPopup}
     >
-      {/* 🔹 DRAWER */}
       <div
         className="w-full sm:w-[420px] max-w-[100vw] h-full bg-white shadow-[0_0_44px_rgba(60,60,60,0.16)] flex flex-col border-l border-[#f2f2f2] animate-in slide-in-from-right duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center px-8 py-[18px] border-b border-[#eee] relative shrink-0">
           <button
             onClick={closeCartPopup}
@@ -37,7 +37,6 @@ export default function CartDrawer() {
           <span className="flex-1 text-center font-bold text-[22px]">CART</span>
         </div>
 
-        {/* Cart items */}
         <div className="flex-1 overflow-y-auto px-8 pt-6">
           {cart.length === 0 ? (
             <div className="p-10 text-center text-gray-500 text-lg">
@@ -55,7 +54,6 @@ export default function CartDrawer() {
                     alt={item.name}
                     className="w-16 h-16 rounded-[10px] object-cover border-[1.5px] border-[#eee]"
                   />
-                  {/* Info */}
                   <div className="flex-1">
                     <div className="font-semibold text-[15px] mb-0.5 text-[#232323]">
                       {item.name}
@@ -64,22 +62,18 @@ export default function CartDrawer() {
                       €{item.price?.toFixed(2)}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {/* Color swatch */}
                       <span
                         className="inline-block w-[19px] h-[19px] rounded-[5px] border border-[#ddd] mr-1"
                         style={{ background: nameToColor(item.color || "") }}
                       />
-                      {/* Color name */}
                       <span className="bg-[#f5f5f5] rounded text-[13px] font-medium px-[13px] py-[2.5px] text-[#333]">
                         {item.colorName || getColorLabel(item.color)}
                       </span>
-                      {/* Size */}
                       <span className="bg-[#f5f5f5] rounded text-[13px] font-medium px-[14px] py-[2.5px] ml-1.5 text-[#333]">
                         {item.size}
                       </span>
                     </div>
                   </div>
-                  {/* Remove */}
                   <button
                     aria-label="Remove item"
                     title="Remove item"
@@ -90,7 +84,6 @@ export default function CartDrawer() {
                   </button>
                 </div>
 
-                {/* Quantity controls */}
                 <div className="mt-3 ml-[84px] flex items-center border-[1.5px] border-[#eee] rounded-lg bg-[#fafbfc] h-[38px] w-[85px]">
                   <button
                     aria-label="Decrease quantity"
@@ -116,7 +109,6 @@ export default function CartDrawer() {
           )}
         </div>
 
-        {/* Bottom: totals/checkout */}
         <div className="border-t-[1.5px] border-[#f3f3f3] px-8 pt-[18px] pb-[30px] bg-white shrink-0">
           <div className="flex justify-between items-center text-base mb-2">
             <span className="text-[#888] font-medium tracking-wide">TOTAL</span>
@@ -128,31 +120,40 @@ export default function CartDrawer() {
             Shipping & taxes calculated at checkout
           </div>
           <button
-            className="w-full bg-[#26d07c] text-[#111] border-none rounded-[29px] text-[16px] font-bold py-[15px] mb-2.5 cursor-pointer flex items-center justify-center gap-1.5 hover:bg-[#20b069] transition-colors"
+            className="w-full bg-[#26d07c] text-[#111] border-none rounded-[999px] text-[16px] font-semibold py-[13px] mb-2.5 cursor-pointer flex items-center justify-center gap-2 transition-colors"
             onClick={() => alert("Pay with Link Flow (demo)")}
           >
-            Pay with
-            <svg height={21} viewBox="0 0 33 21" className="mt-px">
-              <circle cx={10} cy={10} r={10} fill="#111" />
-              <polygon points="8,7 14,10 8,13" fill="#26d07c" />
-              <text
-                x={18}
-                y={15}
-                fill="#111"
-                fontSize="12"
-                fontWeight="bold"
-                fontFamily="Arial"
-              >
-                link
-              </text>
-            </svg>
+            <span className="text-[15px]">Pay with</span>
+            <span className="flex items-center gap-1">
+              <span className="flex items-center justify-center w-[20px] h-[20px] rounded-full bg-[#111]">
+                <svg
+                  viewBox="0 0 12 12"
+                  className="w-[10px] h-[10px]"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 2l4 4-4 4"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <span className="text-[15px] font-bold tracking-tight">link</span>
+            </span>
           </button>
+
           <div className="text-center text-[#adadad] text-[15px] mb-2 font-medium">
             or continue below
           </div>
           <button
             className="w-full bg-[#111] text-white border-none rounded-[29px] text-[16px] font-bold py-[15px] mb-1 cursor-pointer hover:bg-black/90 transition-colors tracking-wide"
-            onClick={() => alert("Go to checkout (demo)")}
+            onClick={() => {
+              closeCartPopup();
+              navigate("/checkout");
+            }}
           >
             CHECKOUT
           </button>

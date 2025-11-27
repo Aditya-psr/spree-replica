@@ -1,3 +1,4 @@
+// client/src/pages/MyAccount.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthProvider";
@@ -38,6 +39,9 @@ export default function MyAccount() {
 
   const [showLoginBanner, setShowLoginBanner] = useState(false);
   const [showProfileBanner, setShowProfileBanner] = useState(false);
+  const [showOrderBanner, setShowOrderBanner] = useState(
+    location.state?.orderPlaced || false
+  );
 
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -47,6 +51,10 @@ export default function MyAccount() {
   });
   const [passwordMessage, setPasswordMessage] = useState("");
 
+  const [orders, setOrders] = useState([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+
+  // Handle navigation state (login success, wishlist tab, order placed)
   useEffect(() => {
     if (location.state?.loginSuccess) {
       setShowLoginBanner(true);
@@ -57,6 +65,14 @@ export default function MyAccount() {
   useEffect(() => {
     if (location.state?.activeTab === "wishlist") {
       setActiveTab("wishlist");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    if (location.state?.orderPlaced) {
+      setActiveTab("orders");
+      setShowOrderBanner(true);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [location.state]);
@@ -108,6 +124,29 @@ export default function MyAccount() {
   useEffect(() => {
     if ((activeTab === "addresses" || activeTab === "personal") && user) {
       fetchAddresses();
+    }
+  }, [activeTab, user]);
+
+  // Fetch orders when orders tab active
+  const fetchOrders = async () => {
+    try {
+      setOrdersLoaded(false);
+      const res = await fetch("http://localhost:5000/api/orders/my", {
+        headers: { Authorization: "Bearer " + localStorage.getItem("token") },
+      });
+      const data = await res.json();
+      setOrders(data.orders || []);
+    } catch (err) {
+      console.error("Failed to fetch orders", err);
+      setOrders([]);
+    } finally {
+      setOrdersLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "orders" && user) {
+      fetchOrders();
     }
   }, [activeTab, user]);
 
@@ -220,27 +259,115 @@ export default function MyAccount() {
     navigate("/login");
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // ====== CONTENT by tab ======
   let content;
 
   if (activeTab === "orders") {
     content = (
-      <div className="text-center mt-[72px] px-4">
+      <div className="max-w-[950px] mx-auto mt-[62px] px-4">
         <h2 className="font-medium text-[23px] tracking-[2px] mb-2.5 uppercase">
           ORDERS
         </h2>
-        <div className="w-[58px] mx-auto mb-6 border-b-[2.3px] border-[#222] opacity-70" />
-        <p className="mx-auto mt-[70px] mb-[30px] font-medium text-[21px] text-[#232323]">
-          YOU CURRENTLY HAVE NO ORDERS
-        </p>
-        <p className="text-[#333] text-[16px] mb-[34px]">
-          If you place an order, you will find details here.
-        </p>
-        <button
-          onClick={() => navigate("/shopall")}
-          className="bg-[#111] text-white py-[14px] px-[49px] rounded-[28px] font-bold text-[19px] border-none tracking-[1px] cursor-pointer hover:bg-black/90 transition-colors"
-        >
-          SHOP ALL
-        </button>
+        <div className="w-[58px] mx-auto md:mx-0 mb-6 border-b-[2.3px] border-[#222] opacity-70" />
+
+        {!ordersLoaded ? (
+          <div className="mt-14 text-center text-[16px] text-[#666]">
+            Loading your orders…
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center mt-[72px]">
+            <p className="mx-auto mb-[30px] font-medium text-[21px] text-[#232323]">
+              YOU CURRENTLY HAVE NO ORDERS
+            </p>
+            <p className="text-[#333] text-[16px] mb-[34px]">
+              If you place an order, you will find details here.
+            </p>
+            <button
+              onClick={() => navigate("/shopall")}
+              className="bg-[#111] text-white py-[14px] px-[49px] rounded-[28px] font-bold text-[19px] border-none tracking-[1px] cursor-pointer hover:bg-black/90 transition-colors"
+            >
+              SHOP ALL
+            </button>
+          </div>
+        ) : (
+          <div className="mt-6 space-y-4">
+            {orders.map((order) => (
+              <div
+                key={order._id}
+                className="border border-[#ecebe8] rounded-[11px] p-5 bg-white"
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                  <div>
+                    <div className="text-[14px] text-[#777] uppercase tracking-[0.16em]">
+                      Order #{order._id.slice(-6).toUpperCase()}
+                    </div>
+                    <div className="text-[13px] text-[#666] mt-[2px]">
+                      Placed on {formatDate(order.createdAt)}
+                    </div>
+                  </div>
+                  <div className="text-right md:text-right">
+                    <div className="text-[14px] font-semibold text-[#222]">
+                      Total: €{order.total?.toFixed(2)}
+                    </div>
+                    {order.deliveryEstimateText && (
+                      <div className="text-[13px] text-[#555] mt-1">
+                        {order.deliveryEstimateText}
+                      </div>
+                    )}
+                    <div className="text-[12px] text-[#00aa55] font-medium mt-1">
+                      {order.status ? order.status.toUpperCase() : "PROCESSING"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-[#f1f1f1] pt-3 mt-2">
+                  {order.items && order.items.length > 0 && (
+                    <div className="space-y-3">
+                      {order.items.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 text-[13px]"
+                        >
+                          {item.image && (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-12 h-12 rounded-md object-cover border border-[#eee]"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <div className="font-medium text-[#222]">
+                              {item.name}
+                            </div>
+                            <div className="text-[#777]">
+                              {item.colorName || item.color} • {item.size} • Qty{" "}
+                              {item.quantity}
+                            </div>
+                          </div>
+                          <div className="font-medium text-[#222]">
+                            €{(item.price * item.quantity).toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   } else if (activeTab === "addresses") {
@@ -551,6 +678,19 @@ export default function MyAccount() {
           </button>
         </div>
       )}
+      {showOrderBanner && (
+        <div className="fixed top-0 left-0 w-screen bg-[#00d084] text-black text-center p-[5px] font-normal text-base z-50 tracking-[0.5px]">
+          YOUR ORDER HAS BEEN PLACED SUCCESSFULLY.
+          <button
+            className="float-right mr-8 -mt-1 bg-none border-none text-black text-[30px] leading-none cursor-pointer"
+            onClick={() => setShowOrderBanner(false)}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <aside className="w-full md:w-[328px] md:min-w-[328px] border-b md:border-b-0 md:border-r border-[#ecebe7] bg-white pt-7 overflow-x-auto md:overflow-visible">
         <div className="font-bold text-[22px] mb-9 ml-6">MY ACCOUNT</div>
         <ul className="list-none m-0 p-0 flex md:flex-col overflow-x-auto md:overflow-visible whitespace-nowrap md:whitespace-normal">

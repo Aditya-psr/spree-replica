@@ -8,6 +8,8 @@ import categoryRoutes from "./routes/categories.js";
 import authRoutes from "./routes/auth.js";
 import newsletterRoutes from "./routes/newsletter.js";
 import adminRoutes from "./routes/admin.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -29,6 +31,8 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("🛍️ E-commerce API is running...");

@@ -1,0 +1,29 @@
+services:
+  backend:
+    image: node:18-alpine
+    container_name: spree-backend-dev
+    working_dir: /app
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./server:/app
+    command: sh -c "npm install && npx nodemon server.js"
+
+  frontend:
+    image: node:18-alpine
+    container_name: spree-frontend-dev
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - REACT_APP_API_URL=http://backend:5000
+    volumes:
+      - ./client:/app
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - backend

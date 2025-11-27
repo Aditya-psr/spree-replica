@@ -26,29 +26,18 @@ import ProductDetail from "./Components/ProductDetail";
 
 import CartDrawer from "./Components/CartDrawer";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import CheckoutPage from "./pages/CheckoutPage";
 
 function App() {
   return (
     <CurrencyProvider>
       <AuthProvider>
-        {" "}
-        {/* <-- Auth first */}
         <CartProvider>
-          {" "}
-          {/* Cart depends on Auth */}
           <WishlistProvider>
-            {" "}
-            {/* Wishlist depends on Auth */}
-            {/* Responsive Layout Wrapper:
-                1. flex flex-col min-h-screen: Ensures Footer stays at bottom.
-                2. w-full overflow-x-hidden: Prevents horizontal scroll on mobile.
-                3. text-base: Sets a default readable size for mobile, scale up in components using md:text-lg etc.
-            */}
             <div className="flex flex-col min-h-screen w-full overflow-x-hidden relative">
               <Header />
               <Navbar />
 
-              {/* Main Content Area - grows to fill space between nav and footer */}
               <main className="flex-grow w-full">
                 <Routes>
                   <Route path="/" element={<Home />} />
@@ -61,6 +50,7 @@ function App() {
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
                   <Route path="/Sale" element={<Sale />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
                   <Route
                     path="/reset-password/:token"
                     element={<ResetPassword />}

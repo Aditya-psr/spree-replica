@@ -1,26 +1,32 @@
-version: "3.9"
-
 services:
   backend:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: my-backend
+    container_name: spree-backend
     ports:
       - "5000:5000"
     environment:
-      - NODE_ENV=production
-    restart: unless-stopped
+      - NODE_ENV=development
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npx nodemon server.js
 
   frontend:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: my-frontend
+    container_name: spree-frontend
     ports:
       - "3000:3000"
     environment:
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true
       - REACT_APP_API_URL=http://backend:5000
+    volumes:
+      - ./client:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm start
     depends_on:
       - backend
-    restart: unless-stopped

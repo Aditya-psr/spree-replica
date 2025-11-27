@@ -134,30 +134,65 @@ export async function resetPassword(req, res) {
 export async function addAddress(req, res) {
   try {
     const userId = req.user.id;
-    const newAddress = req.body;
+    const incoming = req.body;
 
-    if (newAddress.isDefaultDelivery) {
-      await User.updateOne(
-        { _id: userId },
-        { $set: { "addresses.$[elem].isDefaultDelivery": false } },
-        { arrayFilters: [{ "elem.isDefaultDelivery": true }] }
-      );
-    }
-    if (newAddress.isDefaultBilling) {
-      await User.updateOne(
-        { _id: userId },
-        { $set: { "addresses.$[elem].isDefaultBilling": false } },
-        { arrayFilters: [{ "elem.isDefaultBilling": true }] }
-      );
+    // Normalize field names from frontend
+    const defaultDelivery =
+      incoming.defaultDelivery ?? incoming.isDefaultDelivery ?? false;
+    const defaultBilling =
+      incoming.defaultBilling ?? incoming.isDefaultBilling ?? false;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!Array.isArray(user.addresses)) {
+      user.addresses = [];
     }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $push: { addresses: newAddress } },
-      { new: true }
-    );
+    const newAddress = {
+      country: incoming.country || "",
+      firstName: incoming.firstName || "",
+      lastName: incoming.lastName || "",
+      street: incoming.street || "",
+      apt: incoming.apt || "",
+      city: incoming.city || "",
+      state: incoming.state || "",
+      postalCode: incoming.postalCode || "",
+      phone: incoming.phone || "",
+      defaultDelivery: Boolean(defaultDelivery),
+      defaultBilling: Boolean(defaultBilling),
+    };
+
+    // If this is the first address → force default
+    if (user.addresses.length === 0) {
+      newAddress.defaultDelivery = true;
+      newAddress.defaultBilling = true;
+    }
+
+    // If this new address is default, clear flags on others
+    if (newAddress.defaultDelivery || newAddress.defaultBilling) {
+      user.addresses = user.addresses.map((addrDoc) => {
+        const addr = addrDoc.toObject ? addrDoc.toObject() : addrDoc;
+        return {
+          ...addr,
+          defaultDelivery: newAddress.defaultDelivery
+            ? false
+            : !!addr.defaultDelivery,
+          defaultBilling: newAddress.defaultBilling
+            ? false
+            : !!addr.defaultBilling,
+        };
+      });
+    }
+
+    // ✅ PUSH, don't overwrite the array
+    user.addresses.push(newAddress);
+
+    await user.save();
+
     res.json({ addresses: user.addresses });
   } catch (err) {
+    console.error("addAddress error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -166,37 +201,59 @@ export async function editAddress(req, res) {
   try {
     const userId = req.user.id;
     const addressId = req.params.addressId;
-    const updated = req.body;
+    const incoming = req.body;
 
-    if (updated.isDefaultDelivery) {
-      await User.updateOne(
-        { _id: userId },
-        { $set: { "addresses.$[elem].isDefaultDelivery": false } },
-        { arrayFilters: [{ "elem.isDefaultDelivery": true }] }
-      );
-    }
-    if (updated.isDefaultBilling) {
-      await User.updateOne(
-        { _id: userId },
-        { $set: { "addresses.$[elem].isDefaultBilling": false } },
-        { arrayFilters: [{ "elem.isDefaultBilling": true }] }
-      );
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!Array.isArray(user.addresses)) {
+      user.addresses = [];
     }
 
-    const user = await User.findOneAndUpdate(
-      { _id: userId, "addresses._id": addressId },
-      {
-        $set: {
-          "addresses.$": {
-            ...updated,
-            _id: addressId,
-          },
-        },
-      },
-      { new: true }
-    );
+    const defaultDelivery =
+      incoming.defaultDelivery ?? incoming.isDefaultDelivery ?? false;
+    const defaultBilling =
+      incoming.defaultBilling ?? incoming.isDefaultBilling ?? false;
+
+    const isSettingDefault = defaultDelivery || defaultBilling;
+
+    // If making this address default → clear previous defaults
+    if (isSettingDefault) {
+      user.addresses = user.addresses.map((addrDoc) => {
+        const addr = addrDoc.toObject ? addrDoc.toObject() : addrDoc;
+        return {
+          ...addr,
+          defaultDelivery: defaultDelivery ? false : !!addr.defaultDelivery,
+          defaultBilling: defaultBilling ? false : !!addr.defaultBilling,
+        };
+      });
+    }
+
+    // Update the specific address
+    user.addresses = user.addresses.map((addrDoc) => {
+      const addr = addrDoc.toObject ? addrDoc.toObject() : addrDoc;
+
+      if (addr._id.toString() !== addressId) {
+        return addr;
+      }
+
+      return {
+        ...addr,
+        ...incoming,
+        defaultDelivery: isSettingDefault
+          ? Boolean(defaultDelivery)
+          : !!addr.defaultDelivery,
+        defaultBilling: isSettingDefault
+          ? Boolean(defaultBilling)
+          : !!addr.defaultBilling,
+      };
+    });
+
+    await user.save();
+
     res.json({ addresses: user.addresses });
   } catch (err) {
+    console.error("editAddress error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
