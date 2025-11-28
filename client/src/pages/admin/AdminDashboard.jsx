@@ -1,13 +1,14 @@
 import React, { useState } from "react";
-import { Box, Users, Edit } from "lucide-react";
+import { Box, Users, Edit, PackageSearch } from "lucide-react";
 import AddProduct from "./AddProduct";
 import ManageUsers from "./ManageUsers";
 import EditProducts from "./EditProducts";
+import AdminOrders from "./AdminOrders";
 
-// Sidebar menu options
 const menuOptions = [
   { key: "add-product", label: "Add Product", icon: <Box size={22} /> },
   { key: "manage-users", label: "Manage Users", icon: <Users size={22} /> },
+  { key: "orders", label: "Orders", icon: <PackageSearch size={22} /> },
   { key: "edit-products", label: "Edit Products", icon: <Edit size={22} /> },
 ];
 
@@ -19,13 +20,14 @@ export default function AdminDashboard() {
     content = <AddProduct />;
   } else if (activeTab === "manage-users") {
     content = <ManageUsers />;
+  } else if (activeTab === "orders") {
+    content = <AdminOrders />;
   } else if (activeTab === "edit-products") {
     content = <EditProducts />;
   }
 
   return (
     <div className="flex flex-col lg:flex-row max-w-[1440px] mx-auto bg-white min-h-[650px]">
-      {/* Sidebar: Stacks on top for Mobile & Tablet (<1024px), Left Side on Desktop (>=1024px) */}
       <aside className="w-full lg:w-[270px] lg:min-w-[270px] border-b lg:border-b-0 lg:border-r border-[#ecebe7] bg-white pt-4 lg:pt-8">
         <div className="font-bold text-[22px] mb-4 lg:mb-[42px] ml-6 lg:ml-[30px] tracking-[.05em] hidden lg:block">
           ADMIN PANEL
@@ -48,7 +50,6 @@ export default function AdminDashboard() {
         </ul>
       </aside>
 
-      {/* Main Content: min-w-0 and overflow-x-hidden force inner elements (tables) to scroll instead of stretching the page */}
       <main className="flex-1 bg-white p-4 md:p-8 lg:p-[48px] lg:px-[60px] min-w-0 overflow-x-hidden">
         {content}
       </main>

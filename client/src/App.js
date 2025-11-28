@@ -27,6 +27,7 @@ import ProductDetail from "./Components/ProductDetail";
 import CartDrawer from "./Components/CartDrawer";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import CheckoutPage from "./pages/CheckoutPage";
+import AdminUserDetails from "./pages/admin/AdminUserDetails";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
                   <Route path="/Login" element={<Login />} />
                   <Route path="/SignUp" element={<SignUp />} />
                   <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/users/:id" element={<AdminUserDetails />} />
                   <Route path="/Sale" element={<Sale />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/checkout" element={<CheckoutPage />} />

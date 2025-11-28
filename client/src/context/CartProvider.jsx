@@ -24,6 +24,7 @@ export function CartProvider({ children }) {
       setCart([]);
     }
   }, [user]);
+
   useEffect(() => {
     if (user && user._id) {
       localStorage.setItem(`cart_${user._id}`, JSON.stringify(cart));
@@ -88,6 +89,18 @@ export function CartProvider({ children }) {
             quantity,
             variantId,
             colorName: colorLabel || color,
+
+            category:
+              product.category ||
+              product.mainCategory ||
+              product.categoryName ||
+              "",
+            categorySlug: product.categorySlug || product.slug || "",
+            categoryName:
+              product.categoryName ||
+              product.category ||
+              product.mainCategory ||
+              "",
           },
         ];
       }

@@ -1,4 +1,3 @@
-// client/src/pages/MyAccount.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthProvider";
@@ -271,7 +270,6 @@ export default function MyAccount() {
     });
   };
 
-  // ====== CONTENT by tab ======
   let content;
 
   if (activeTab === "orders") {

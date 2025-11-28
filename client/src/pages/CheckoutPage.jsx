@@ -6,7 +6,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartProvider";
 import { AuthContext } from "../context/AuthProvider";
 import AddressModal from "../Components/AddressModal";
@@ -19,11 +19,10 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-const stripePromise = loadStripe(
-  process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY
-);
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 // ========== PAYMENT FORM (Stripe) ==========
+// amountMajor = total in major currency (e.g. 19.99)
 function PaymentForm({
   amountMajor,
   currency,
@@ -49,7 +48,9 @@ function PaymentForm({
     const name =
       `${shippingAddress.firstName || ""} ${
         shippingAddress.lastName || ""
-      }`.trim() || shippingAddress.fullName || "";
+      }`.trim() ||
+      shippingAddress.fullName ||
+      "";
 
     return {
       name: name || "Test Customer",
@@ -172,9 +173,6 @@ function PaymentForm({
             console.error("Failed to create order");
           }
 
-          // Optionally you can read returned order:
-          // const orderData = await orderRes.json();
-
           // 4) Redirect to My Account > Orders
           navigate("/myaccount", {
             state: {
@@ -256,9 +254,7 @@ function PaymentForm({
         disabled={processing || !stripe}
         className="w-full rounded-full bg-black text-white text-[15px] font-semibold py-3 hover:bg-black/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
       >
-        {processing
-          ? "Processing..."
-          : `Pay now €${amountMajor.toFixed(2)}`}
+        {processing ? "Processing..." : `Pay now €${amountMajor.toFixed(2)}`}
       </button>
     </form>
   );
@@ -276,6 +272,9 @@ export default function CheckoutPage() {
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
+
+  // NEW: which address is selected for checkout
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
 
   const [selectedShipping, setSelectedShipping] = useState("standard");
   const [shippingPrice, setShippingPrice] = useState(5); // default
@@ -308,16 +307,30 @@ export default function CheckoutPage() {
     [total, shippingPrice, step]
   );
 
+  // Fetch addresses and set default selected address
   const fetchAddresses = useCallback(async () => {
     try {
       const res = await fetch("http://localhost:5000/api/auth/addresses", {
         headers: { Authorization: "Bearer " + localStorage.getItem("token") },
       });
       const data = await res.json();
-      setAddresses(data.addresses || []);
+      const list = data.addresses || [];
+      setAddresses(list);
+
+      if (list.length > 0) {
+        // Keep previous selection if it still exists, otherwise pick defaultDelivery or first
+        setSelectedAddressId((prev) => {
+          if (prev && list.some((a) => a._id === prev)) return prev;
+          const def = list.find((a) => a.defaultDelivery) || list[0];
+          return def?._id || null;
+        });
+      } else {
+        setSelectedAddressId(null);
+      }
     } catch (err) {
       console.error("Failed to fetch addresses", err);
       setAddresses([]);
+      setSelectedAddressId(null);
     } finally {
       setAddressesLoaded(true);
     }
@@ -366,13 +379,15 @@ export default function CheckoutPage() {
 
   const hasSavedAddress = !!user && addresses.length > 0;
 
-  const primaryAddress = useMemo(
-    () =>
-      hasSavedAddress
-        ? addresses.find((a) => a.defaultDelivery) || addresses[0]
-        : null,
-    [hasSavedAddress, addresses]
-  );
+  // Now: primaryAddress = the *selected* address
+  const primaryAddress = useMemo(() => {
+    if (!hasSavedAddress || !selectedAddressId) return null;
+    return (
+      addresses.find((a) => a._id === selectedAddressId) ||
+      addresses.find((a) => a.defaultDelivery) ||
+      addresses[0]
+    );
+  }, [hasSavedAddress, selectedAddressId, addresses]);
 
   const fullName =
     primaryAddress &&
@@ -406,13 +421,17 @@ export default function CheckoutPage() {
     );
   }
 
-  // Shared header + breadcrumbs
   const renderHeader = () => (
     <>
       <div className="mb-6">
         <div className="flex items-center gap-2 text-[24px] font-semibold">
-          <span className="text-[28px] leading-none">🖐</span>
-          <span>spree</span>
+          <Link to="/">
+            <img
+              src="/LogoFull1.png"
+              alt="Spree logo"
+              className="h-[40px] md:h-[48px] w-auto mr-2 object-contain"
+            />
+          </Link>
         </div>
       </div>
 
@@ -459,22 +478,22 @@ export default function CheckoutPage() {
         <>
           {renderHeader()}
 
+          {/* Account info */}
           {user && hasSavedAddress && (
             <div className="border border-[#e3e3e3] rounded-[10px] px-5 py-4 mb-5 bg-white">
               <div className="text-[11px] uppercase tracking-[0.16em] text-[#777] mb-2">
                 Account
               </div>
               <div className="text-[15px] font-semibold mb-1">
-                {fullName ||
-                  (user.firstName || user.lastName
-                    ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
-                    : user.email)}
+                {user.firstName || user.lastName
+                  ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+                  : user.email}
               </div>
               <div className="text-[13px] text-[#555]">{user.email}</div>
             </div>
           )}
 
-          {/* Pay with Link button */}
+          {/* Pay with Link button (demo) */}
           <button
             type="button"
             className="w-full bg-[#00d66b] text-[#111] rounded-full text-[16px] font-semibold py-[14px] mb-5 cursor-pointer flex items-center justify-center hover:bg-[#00c561] transition-colors"
@@ -533,57 +552,83 @@ export default function CheckoutPage() {
                 Shipping Address
               </h2>
 
+              {/* 🔹 SHOW ALL USER ADDRESSES HERE */}
               <div className="border border-[#e3e3e3] rounded-[10px] overflow-hidden mb-6 bg-white">
-                <div className="px-5 pt-4 pb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-[4px]">
-                      <span className="inline-flex items-center justify-center w-[16px] h-[16px] rounded-full border border-[#111]">
-                        <span className="w-[8px] h-[8px] rounded-full bg-[#111]" />
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-[14px] font-semibold mb-1">
-                        {fullName}
-                      </div>
-                      <div className="text-[13px] text-[#444] leading-relaxed">
-                        {primaryAddress.street && (
-                          <div>{primaryAddress.street}</div>
-                        )}
-                        <div>
-                          {primaryAddress.city}
-                          {primaryAddress.city ? "," : ""}{" "}
-                          {primaryAddress.state} {primaryAddress.postalCode}{" "}
-                          {primaryAddress.country}
-                        </div>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {primaryAddress.defaultDelivery && (
-                          <span className="inline-flex items-center rounded-full bg-[#f3f1e9] text-[11px] font-medium px-3 py-1 text-[#333]">
-                            This is your default delivery address
-                          </span>
-                        )}
-                        {primaryAddress.defaultBilling && (
-                          <span className="inline-flex items-center rounded-full bg-[#f3f1e9] text-[11px] font-medium px-3 py-1 text-[#333]">
-                            This is your default billing address
-                          </span>
-                        )}
-                      </div>
+                {addresses.map((addr, idx) => {
+                  const isSelected = addr._id === selectedAddressId;
+                  const name =
+                    addr.firstName || addr.lastName
+                      ? `${addr.firstName || ""} ${addr.lastName || ""}`.trim()
+                      : addr.fullName || "";
+
+                  return (
+                    <div
+                      key={addr._id}
+                      className={`px-5 py-4 text-[13px] text-[#444] flex items-start gap-3 ${
+                        idx !== addresses.length - 1
+                          ? "border-b border-[#e9e9e9]"
+                          : ""
+                      }`}
+                    >
+                      {/* Radio */}
                       <button
                         type="button"
-                        onClick={() => {
-                          setEditingAddress(primaryAddress);
-                          setAddressModalOpen(true);
-                        }}
-                        className="mt-3 text-[13px] text-[#2d6cdf] font-medium hover:underline"
+                        className="mt-[3px]"
+                        onClick={() => setSelectedAddressId(addr._id)}
                       >
-                        Edit
+                        <span className="inline-flex items-center justify-center w-[16px] h-[16px] rounded-full border border-[#111]">
+                          {isSelected && (
+                            <span className="w-[8px] h-[8px] rounded-full bg-[#111]" />
+                          )}
+                        </span>
                       </button>
+
+                      {/* Address details */}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <div className="text-[14px] font-semibold mb-1">
+                              {name}
+                            </div>
+                            <div className="text-[13px] text-[#444] leading-relaxed">
+                              {addr.street && <div>{addr.street}</div>}
+                              <div>
+                                {addr.city}
+                                {addr.city ? "," : ""} {addr.state}{" "}
+                                {addr.postalCode} {addr.country}
+                              </div>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {addr.defaultDelivery && (
+                                <span className="inline-flex items-center rounded-full bg-[#f3f1e9] text-[11px] font-medium px-3 py-1 text-[#333]">
+                                  Default delivery
+                                </span>
+                              )}
+                              {addr.defaultBilling && (
+                                <span className="inline-flex items-center rounded-full bg-[#f3f1e9] text-[11px] font-medium px-3 py-1 text-[#333]">
+                                  Default billing
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingAddress(addr);
+                              setAddressModalOpen(true);
+                            }}
+                            className="text-[12px] text-[#2d6cdf] font-medium hover:underline whitespace-nowrap"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })}
 
-                <div className="border-t border-[#e9e9e9]" />
-
+                {/* New address row */}
                 <button
                   type="button"
                   className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-[#fafafa]"
@@ -599,8 +644,12 @@ export default function CheckoutPage() {
 
               <div className="w-full flex justify-end">
                 <button
-                  onClick={() => setStep("delivery")}
-                  className="inline-flex items-center justify-center rounded-full bg-black text-white text-[15px] font-semibold px-10 py-3 shadow-[0_1px_0_rgba(0,0,0,0.18)] hover:bg-black/90 transition-colors"
+                  onClick={() => {
+                    if (!selectedAddressId) return;
+                    setStep("delivery");
+                  }}
+                  className="inline-flex items-center justify-center rounded-full bg-black text-white text-[15px] font-semibold px-10 py-3 shadow-[0_1px_0_rgba(0,0,0,0.18)] hover:bg-black/90 transition-colors disabled:opacity-60"
+                  disabled={!selectedAddressId}
                 >
                   Save and Continue
                 </button>
@@ -642,7 +691,8 @@ export default function CheckoutPage() {
           </div>
 
           <h2 className="text-[15px] font-semibold mb-3">
-            Delivery method from <span className="font-bold">Shop location</span>
+            Delivery method from{" "}
+            <span className="font-bold">Shop location</span>
           </h2>
 
           <div className="border border-[#e3e3e3] rounded-[10px] overflow-hidden mb-6 bg-white">

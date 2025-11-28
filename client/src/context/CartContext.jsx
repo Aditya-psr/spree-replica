@@ -12,6 +12,7 @@ export function CartProvider({ children }) {
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
+
   function addToCart(
     product,
     color,
@@ -23,7 +24,10 @@ export function CartProvider({ children }) {
   ) {
     setCart((prev) => {
       const variantId = variant?._id || color;
-      const variantPrice = variant?.sizes?.find((sz)=>sz.size === size)?.price;
+      const variantPrice = variant?.sizes?.find(
+        (sz) => sz.size === size
+      )?.price;
+
       const foundIdx = prev.findIndex(
         (item) =>
           item._id === product._id &&
@@ -32,16 +36,19 @@ export function CartProvider({ children }) {
           item.variantId === variantId
       );
 
+      const linePrice =
+        typeof priceOverride === "number" && !Number.isNaN(priceOverride)
+          ? priceOverride
+          : typeof variantPrice === "number" && !Number.isNaN(variantPrice)
+          ? variantPrice
+          : product.price;
+
       if (foundIdx >= 0) {
         const updated = [...prev];
         updated[foundIdx].quantity += quantity;
+        updated[foundIdx].price = linePrice;
         return updated;
       } else {
-        const linePrice =
-          typeof priceOverride === "number" && !Number.isNaN(priceOverride)
-            ? priceOverride
-            : product.price;
-
         return [
           ...prev,
           {
@@ -57,6 +64,18 @@ export function CartProvider({ children }) {
             quantity,
             variantId,
             colorName: colorLabel || color,
+
+            category:
+              product.category ||
+              product.mainCategory ||
+              product.categoryName ||
+              "",
+            categorySlug: product.categorySlug || product.slug || "",
+            categoryName:
+              product.categoryName ||
+              product.category ||
+              product.mainCategory ||
+              "",
           },
         ];
       }

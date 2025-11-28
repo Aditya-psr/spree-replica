@@ -9,6 +9,11 @@ const OrderItemSchema = new mongoose.Schema({
   color: String,
   colorName: String,
   size: String,
+
+  // 🔹 NEW FIELDS so admin can filter by category
+  category: { type: String, default: "" },
+  categorySlug: { type: String, default: "" },
+  categoryName: { type: String, default: "" },
 });
 
 const AddressSchema = new mongoose.Schema({

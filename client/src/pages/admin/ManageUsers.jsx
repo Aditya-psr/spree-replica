@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function ManageUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -70,7 +72,7 @@ export default function ManageUsers() {
             {users.map((u) => (
               <div
                 key={u._id}
-                className="bg-white rounded-[14px] shadow-[0_2px_12px_rgba(90,76,76,0.07)] min-w-0 w-full p-7 flex flex-col justify-between h-[240px] relative transition-transform hover:-translate-y-1 duration-200"
+                className="bg-white rounded-[14px] shadow-[0_2px_12px_rgba(90,76,76,0.07)] min-w-0 w-full p-7 flex flex-col justify-between h-[300px] relative transition-transform hover:-translate-y-1 duration-200"
               >
                 <div>
                   <div
@@ -107,18 +109,28 @@ export default function ManageUsers() {
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDeleteUser(u._id)}
-                  disabled={deletingId === u._id}
-                  aria-label="Remove User"
-                  className={`w-full border-[1.5px] border-[#efdada] rounded-lg mt-[18px] font-bold py-[11px] text-[16px] tracking-[.02em] transition-all duration-150 ${
-                    deletingId === u._id
-                      ? "bg-[#ebe9e9] text-[#b14a4a] cursor-wait"
-                      : "bg-[#f7efef] text-[#b14a4a] cursor-pointer hover:bg-[#f2e4e4]"
-                  }`}
-                >
-                  {deletingId === u._id ? "Removing..." : "Remove"}
-                </button>
+
+                <div className="mt-[18px] flex flex-col gap-2">
+                  <button
+                    onClick={() => navigate(`/admin/users/${u._id}`)}
+                    className="w-full border-[1.5px] border-[#dfe9ff] rounded-lg font-bold py-[10px] text-[15px] tracking-[.02em] bg-[#eef3ff] text-[#27418b] hover:bg-[#e0e9ff] transition-all"
+                  >
+                    View details
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteUser(u._id)}
+                    disabled={deletingId === u._id}
+                    aria-label="Remove User"
+                    className={`w-full border-[1.5px] border-[#efdada] rounded-lg font-bold py-[10px] text-[15px] tracking-[.02em] transition-all duration-150 ${
+                      deletingId === u._id
+                        ? "bg-[#ebe9e9] text-[#b14a4a] cursor-wait"
+                        : "bg-[#f7efef] text-[#b14a4a] cursor-pointer hover:bg-[#f2e4e4]"
+                    }`}
+                  >
+                    {deletingId === u._id ? "Removing..." : "Remove"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
